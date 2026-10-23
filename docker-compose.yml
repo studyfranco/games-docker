@@ -1,8 +1,8 @@
 services:
-  games:
-    container_name: games
-    hostname: games
-    image: ghcr.io/studyfranco/games-docker:master
+  satisfactory:
+    container_name: satisfactory-server
+    hostname: satisfactory-server
+    image: ghcr.io/studyfranco/games-docker:satisfactory
     #network_mode: "host"
     read_only: true
     init: true
@@ -21,13 +21,24 @@ services:
     volumes:
       # Must be owned by 10000:10000 (chown -R 10000:10000 /path/to/config)
       - "/path/to/config:/config"
+      # Optional, game files and logs elsewhere (create the folders before, owned by 10000:10000)
+      #- "/path/to/gamefiles:/config/gamefiles"
+      #- "/var/log/satisfactory:/config/logs"
     ports:
-      - 9999:9999/udp
+      - 7777:7777/udp
+      - 7777:7777/tcp
+      - 8888:8888/tcp
     expose:
-      - 9999/udp
+      - 7777/udp
+      - 7777/tcp
+      - 8888/tcp
     environment:
-      - "SERVER_NAME=ServerByMe"
-      - "SERVER_PORT=9999"
+      - "SERVER_PORT=7777"
+      - "SERVER_MESSAGING_PORT=8888"
+      - "MAX_PLAYERS=4"
+      - "AUTOSAVE_NUM=5"
+      - "GAME_BRANCH=public"
+      - "BACKUP_RETENTION=10"
       - "TZ=Etc/UTC"
     tmpfs:
       - "/run:exec,mode=777"
