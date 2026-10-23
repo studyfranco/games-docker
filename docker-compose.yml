@@ -1,8 +1,8 @@
 services:
-  games:
-    container_name: games
-    hostname: games
-    image: ghcr.io/studyfranco/games-docker:master
+  valheim:
+    container_name: valheim-server
+    hostname: valheim-server
+    image: ghcr.io/studyfranco/games-docker:valheim
     #network_mode: "host"
     read_only: true
     init: true
@@ -21,13 +21,25 @@ services:
     volumes:
       # Must be owned by 10000:10000 (chown -R 10000:10000 /path/to/config)
       - "/path/to/config:/config"
+      # Optional, game files elsewhere (create the folder before, owned by 10000:10000)
+      #- "/path/to/gamefiles:/config/gamefiles"
     ports:
-      - 9999:9999/udp
+      - 2456:2456/udp
+      - 2457:2457/udp
     expose:
-      - 9999/udp
+      - 2456/udp
+      - 2457/udp
     environment:
-      - "SERVER_NAME=ServerByMe"
-      - "SERVER_PORT=9999"
+      - "SERVER_NAME=ValheimServerByMe"
+      - "SERVER_PORT=2456"
+      - "SERVER_PASSWORD=password"
+      - "WORLD_NAME=Dedicated"
+      - "PUBLIC=1"
+      - "CROSSPLAY=false"
+      - "PRESET="
+      - "MODIFIERS="
+      - "SET_KEYS="
+      - "BACKUP_RETENTION=10"
       - "TZ=Etc/UTC"
     tmpfs:
       - "/run:exec,mode=777"
