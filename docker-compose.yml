@@ -1,8 +1,8 @@
 services:
-  games:
-    container_name: games
-    hostname: games
-    image: ghcr.io/studyfranco/games-docker:master
+  conan-exiles:
+    container_name: conan-exiles-server
+    hostname: conan-exiles-server
+    image: ghcr.io/studyfranco/games-docker:conan-exiles-enhanced
     #network_mode: "host"
     read_only: true
     init: true
@@ -21,13 +21,31 @@ services:
     volumes:
       # Must be owned by 10000:10000 (chown -R 10000:10000 /path/to/config)
       - "/path/to/config:/config"
+      # Optional, game files and logs elsewhere (create the folders before, owned by 10000:10000)
+      #- "/path/to/gamefiles:/config/gamefiles"
+      #- "/var/log/conan-exiles:/config/logs"
     ports:
-      - 9999:9999/udp
+      - 7777:7777/udp
+      # Pinger port, always SERVER_PORT + 1
+      - 7778:7778/udp
+      - 27015:27015/udp
+      # RCON, only if you need it from outside
+      #- 25575:25575/tcp
     expose:
-      - 9999/udp
+      - 7777/udp
+      - 7778/udp
+      - 27015/udp
+      - 25575/tcp
     environment:
-      - "SERVER_NAME=ServerByMe"
-      - "SERVER_PORT=9999"
+      - "SERVER_NAME=ConanExilesServerByMe"
+      - "SERVER_PORT=7777"
+      - "SERVER_QUERY_PORT=27015"
+      - "SERVER_PASSWORD=password"
+      - "SERVER_ADMIN_PASSWORD=adminpassword"
+      - "MAX_PLAYERS=40"
+      - "RCON_PASSWORD="
+      - "MOD_IDS="
+      - "BACKUP_RETENTION=10"
       - "TZ=Etc/UTC"
     tmpfs:
       - "/run:exec,mode=777"
