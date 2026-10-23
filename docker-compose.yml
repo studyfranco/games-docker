@@ -1,8 +1,8 @@
 services:
-  games:
-    container_name: games
-    hostname: games
-    image: ghcr.io/studyfranco/games-docker:master
+  palworld:
+    container_name: palworld-server
+    hostname: palworld-server
+    image: ghcr.io/studyfranco/games-docker:palworld
     #network_mode: "host"
     read_only: true
     init: true
@@ -21,13 +21,25 @@ services:
     volumes:
       # Must be owned by 10000:10000 (chown -R 10000:10000 /path/to/config)
       - "/path/to/config:/config"
+      # Optional, game files and logs elsewhere (create the folders before, owned by 10000:10000)
+      #- "/path/to/gamefiles:/config/gamefiles"
+      #- "/var/log/palworld:/config/logs"
     ports:
-      - 9999:9999/udp
+      - 8211:8211/udp
+      - 27015:27015/udp
     expose:
-      - 9999/udp
+      - 8211/udp
+      - 27015/udp
     environment:
-      - "SERVER_NAME=ServerByMe"
-      - "SERVER_PORT=9999"
+      - "SERVER_NAME=PalworldServerByMe"
+      - "SERVER_PORT=8211"
+      - "SERVER_QUERY_PORT=27015"
+      - "SERVER_PASSWORD=password"
+      - "SERVER_ADMIN_PASSWORD=adminpassword"
+      - "MAX_PLAYERS=32"
+      - "MAX_PLAYERS_COOP=32"
+      - "MAX_PLAYERS_GUILD=32"
+      - "BACKUP_RETENTION=10"
       - "TZ=Etc/UTC"
     tmpfs:
       - "/run:exec,mode=777"
