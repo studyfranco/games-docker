@@ -1,0 +1,39 @@
+services:
+  games:
+    container_name: games
+    hostname: games
+    image: ghcr.io/studyfranco/games-docker:master
+    #network_mode: "host"
+    read_only: true
+    init: true
+    security_opt:
+      - "no-new-privileges:true"
+    cap_drop:
+      - NET_RAW
+      - MKNOD
+      - AUDIT_WRITE
+      - SYS_CHROOT
+      - SETFCAP
+      - SETPCAP
+      - SYS_ADMIN
+      - SYS_PTRACE
+      - SYS_MODULE
+    volumes:
+      # Must be owned by 10000:10000 (chown -R 10000:10000 /path/to/config)
+      - "/path/to/config:/config"
+    ports:
+      - 9999:9999/udp
+    expose:
+      - 9999/udp
+    environment:
+      - "SERVER_NAME=ServerByMe"
+      - "SERVER_PORT=9999"
+      - "TZ=Etc/UTC"
+    tmpfs:
+      - "/run:exec,mode=777"
+      - "/tmp:exec,mode=777"
+      - "/tmp/dumps:exec,mode=777"
+      - "/var/tmp:exec,mode=777"
+      - "/home/steam:exec,uid=10000,gid=10000,mode=700"
+    restart: "unless-stopped"
+    stop_grace_period: 1m
