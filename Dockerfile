@@ -1,85 +1,40 @@
-FROM debian:testing-slim
+FROM ghcr.io/studyfranco/games-docker:master
 
 LABEL maintainer="studyfranco@gmail.com"
-# Used by the host cron to find the containers to update
-LABEL games-docker.update-check="true"
 
 ARG CONTAINER_USER=steam
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV LANG=en_US.UTF-8 \
-    LC_ALL=en_US.UTF-8 \
-    USER="${CONTAINER_USER}"
-ENV HOME="/home/${USER}"
-ENV STEAMCMD_PATH="/opt/steamcmd" \
-    STEAMCMD_WORKING_PATH="${HOME}/steamcmd" \
-    STEAM_SDK64_PATH="${HOME}/.steam/sdk64" \
-    STEAM_SDK32_PATH="${HOME}/.steam/sdk32" \
-    STEAM_APP_ID="" \
-    GAME_PLATFORM="" \
-    GAME_BRANCH="" \
-    SKIP_UPDATE="false" \
-    EXTRA_ARGS="" \
-    BACKUP_RETENTION=10 \
-    BACKUP_DIRS="saves gameconfigs" \
-    CONFIG_DIRS="/config/backups /config/gamefiles /config/saves /config/gameconfigs" \
-    GAME_RUN_SCRIPT="/opt/game/run.sh" \
-    GAME_UPDATE_HOOK="/opt/game/update-hook.sh" \
-    GAME_BACKUP_HOOK="/opt/game/backup-hook.sh" \
-    STARTED_BUILD_FILE="/tmp/game-buildid" \
-    INIT_LOCK="/tmp/init.lock" \
-    SERVER_NAME="ServerByMe" \
-    SERVER_PORT=9999
+# WINEPREFIX: Wine prefix of the game, created at first start by wine-prefix-init (C: drive, registry, AppData)
+# WINE_PREFIX_TEMPLATE: prefix prepared in the game image by wine-build-prefix (winetricks), copied at first start
+ENV GAME_PLATFORM="windows" \
+    WINEPREFIX="/config/compatdata/pfx" \
+    WINEARCH="win64" \
+    WINEDEBUG="-all" \
+    WINE_PREFIX_TEMPLATE="/opt/wine-prefix"
+# The Wine prefix gets its own folder in /config, created by init.sh at start
+ENV CONFIG_DIRS="${CONFIG_DIRS} /config/compatdata"
 
+USER root
+
+# Wine of WineHQ (classic WoW64, like most of the Wine game server images), winbind (NTLM),
+# Xvfb (virtual display), winetricks and cabextract (Windows runtimes in the prefix).
+# libgd3 and libavif16 of stable: in testing, their dependency libabsl has not the same version in amd64 and i386
 RUN set -x \
-    && rm /etc/apt/sources.list.d/debian.sources \
-    && echo "deb http://deb.debian.org/debian/ testing main contrib non-free non-free-firmware" > /etc/apt/sources.list \
+    && mkdir -pm755 /etc/apt/keyrings \
+    && curl -fsSL https://dl.winehq.org/wine-builds/winehq.key -o /etc/apt/keyrings/winehq-archive.key \
+    && curl -fsSL https://dl.winehq.org/wine-builds/debian/dists/trixie/winehq-trixie.sources -o /etc/apt/sources.list.d/winehq-trixie.sources \
+    && printf 'Package: libgd3 libgd3:i386 libavif16 libavif16:i386\nPin: release a=stable\nPin-Priority: 990\n' > /etc/apt/preferences.d/wine \
     && apt update \
-    && apt install -y ca-certificates apt-transport-https --no-install-recommends \
-    && echo "" > /etc/apt/sources.list \
-    && echo "Types: deb deb-src\nURIs: https://deb.debian.org/debian\nSuites: stable testing unstable\nComponents: main contrib non-free non-free-firmware\nEnabled: yes\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg" > /etc/apt/sources.list.d/debian.sources \
-    && echo "Package: *\nPin: release a=testing\nPin-Priority: 510\n" > /etc/apt/preferences.d/list \
-    && echo "Package: *\nPin: release a=unstable\nPin-Priority: 495\n" >> /etc/apt/preferences.d/list \
-    && echo "Package: *\nPin: release a=stable\nPin-Priority: 490" >> /etc/apt/preferences.d/list \
-    && apt update \
-    && apt dist-upgrade -y \
-    && apt autopurge -yy \
+    && apt install -y winehq-stable wine-stable:amd64 wine-stable-amd64 wine-stable-i386:i386 \
+        winbind winetricks cabextract xvfb xauth --no-install-recommends \
     && apt clean \
-    && rm -rf /var/cache/* /var/lib/apt/lists/* /var/log/* /var/tmp/* /tmp/*
-
-ARG CONTAINER_GID=10000
-ARG CONTAINER_UID=10000
-
-RUN set -x \
-    && dpkg --add-architecture i386 \
-    && apt update \
-    && apt install -y nano curl jq pigz procps locales lib32gcc-s1 lib32stdc++6 --no-install-recommends \
-    && sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen \
-    && dpkg-reconfigure --frontend=noninteractive locales \
-    && groupadd -g ${CONTAINER_GID} ${USER} \
-    && useradd -u ${CONTAINER_UID} -g ${CONTAINER_GID} -m ${USER} \
-    && mkdir -p /config /config/backups /config/gamefiles /config/saves /config/gameconfigs "${STEAMCMD_PATH}" \
-    && chmod 777 /tmp \
-    && chown -R "${CONTAINER_UID}":"${CONTAINER_GID}" /config "${STEAMCMD_PATH}" \
-    && ln -s "${STEAMCMD_WORKING_PATH}/linux64/steamclient.so" "/usr/lib/x86_64-linux-gnu/steamclient.so" \
-    && apt clean \
-    && rm -rf /var/cache/* /var/lib/apt/lists/* /var/log/* /var/tmp/* /tmp/*
-
-USER ${USER}
-
-# Nothing is needed in HOME at runtime (it can be a tmpfs): init.sh copies steamcmd
-# to STEAMCMD_WORKING_PATH and creates the ~/.steam/sdk32 and sdk64 links at startup
-RUN curl -fsSL 'https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz' | tar xzf - -C "${STEAMCMD_PATH}" \
-    && cd "${STEAMCMD_PATH}" \
-    && "${STEAMCMD_PATH}/steamcmd.sh" +login anonymous +quit \
-    && rm -rf "${HOME}/.steam" "${HOME}/Steam"
+    && rm -rf /var/cache/* /var/lib/apt/lists/* /var/log/* /var/tmp/* /tmp/* \
+    && mkdir -p "${WINE_PREFIX_TEMPLATE}" \
+    && chown steam:steam "${WINE_PREFIX_TEMPLATE}"
 
 # Owned by root: the steam user can run them but not modify them
-COPY --chmod=755 init.sh /init.sh
-COPY --chmod=755 update-check.sh /usr/local/bin/update-check
-COPY --chmod=755 backup.sh /usr/local/bin/backup
-COPY --chmod=644 functions.sh /usr/local/lib/games-docker/functions.sh
+COPY --chmod=755 wine-prefix-init.sh /usr/local/bin/wine-prefix-init
+COPY --chmod=755 wine-build-prefix.sh /usr/local/bin/wine-build-prefix
 
-WORKDIR /config
-
-ENTRYPOINT [ "/init.sh" ]
+USER ${CONTAINER_USER}
