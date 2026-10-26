@@ -1,8 +1,8 @@
 services:
-  games:
-    container_name: games-proton
-    hostname: games-proton
-    image: ghcr.io/studyfranco/games-docker:proton
+  voyagers-of-nera:
+    container_name: voyagers-of-nera
+    hostname: voyagers-of-nera
+    image: ghcr.io/studyfranco/games-docker:voyagers-of-nera
     #network_mode: "host"
     read_only: true
     init: true
@@ -21,13 +21,23 @@ services:
     volumes:
       # Must be owned by 10000:10000 (chown -R 10000:10000 /path/to/config)
       - "/path/to/config:/config"
+      # Optional, game files and logs elsewhere (create the folders before, owned by 10000:10000)
+      #- "/path/to/gamefiles:/config/gamefiles"
+      #- "/var/log/voyagers-of-nera:/config/logs"
     ports:
-      - 9999:9999/udp
+      - 7777:7777/udp
+      - 27015:27015/udp
     expose:
-      - 9999/udp
+      - 7777/udp
+      - 27015/udp
     environment:
-      - "SERVER_NAME=ServerByMe"
-      - "SERVER_PORT=9999"
+      - "SERVER_NAME=VoyagersOfNeraServerByMe"
+      - "SERVER_PORT=7777"
+      - "SERVER_QUERY_PORT=27015"
+      - "SERVER_PASSWORD=password"
+      - "MAX_PLAYERS=10"
+      - "SAVE_INTERVAL=300"
+      - "BACKUP_RETENTION=10"
       - "TZ=Etc/UTC"
     tmpfs:
       - "/run:exec,mode=777"
