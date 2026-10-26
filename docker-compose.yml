@@ -1,8 +1,8 @@
 services:
   games:
-    container_name: games
-    hostname: games
-    image: ghcr.io/studyfranco/games-docker:master
+    container_name: games-proton
+    hostname: games-proton
+    image: ghcr.io/studyfranco/games-docker:proton
     #network_mode: "host"
     read_only: true
     init: true
