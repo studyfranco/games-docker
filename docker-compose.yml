@@ -1,8 +1,8 @@
 services:
-  games:
-    container_name: games
-    hostname: games
-    image: ghcr.io/studyfranco/games-docker:master
+  soulmask:
+    container_name: soulmask-server
+    hostname: soulmask-server
+    image: ghcr.io/studyfranco/games-docker:soulmask
     #network_mode: "host"
     read_only: true
     init: true
@@ -21,13 +21,29 @@ services:
     volumes:
       # Must be owned by 10000:10000 (chown -R 10000:10000 /path/to/config)
       - "/path/to/config:/config"
+      # Optional, game files and logs elsewhere (create the folders before, owned by 10000:10000)
+      #- "/path/to/gamefiles:/config/gamefiles"
+      #- "/var/log/soulmask/server_1:/config/logs"
     ports:
-      - 9999:9999/udp
+      - 8777:8777/udp
+      - 27015:27015/udp
     expose:
-      - 9999/udp
+      - 8777/udp
+      - 27015/udp
+      - 20000/tcp
     environment:
-      - "SERVER_NAME=ServerByMe"
-      - "SERVER_PORT=9999"
+      - "SERVER_NAME=SoulmaskServerByMe"
+      - "SERVER_PORT=8777"
+      - "SERVER_QUERY_PORT=27015"
+      - "SERVER_PASSWORD=password"
+      - "SERVER_ADMIN_PASSWORD=adminpassword"
+      - "MAX_PLAYERS=32"
+      - "BACKUP_INTERVAL=900"
+      - "SAVE_INTERVAL=600"
+      - "GAME_MODE=pve"
+      - "SERVER_LEVEL=Level01_Main"
+      - "MOD_IDS="
+      - "BACKUP_RETENTION=10"
       - "TZ=Etc/UTC"
     tmpfs:
       - "/run:exec,mode=777"
