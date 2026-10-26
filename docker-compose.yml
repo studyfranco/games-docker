@@ -1,8 +1,8 @@
 services:
-  games:
-    container_name: games-proton
-    hostname: games-proton
-    image: ghcr.io/studyfranco/games-docker:proton
+  icarus:
+    container_name: icarus-server
+    hostname: icarus-server
+    image: ghcr.io/studyfranco/games-docker:icarus
     #network_mode: "host"
     read_only: true
     init: true
@@ -21,13 +21,33 @@ services:
     volumes:
       # Must be owned by 10000:10000 (chown -R 10000:10000 /path/to/config)
       - "/path/to/config:/config"
+      # Optional, game files and logs elsewhere (create the folders before, owned by 10000:10000)
+      #- "/path/to/gamefiles:/config/gamefiles"
+      #- "/var/log/icarus:/config/logs"
     ports:
-      - 9999:9999/udp
+      # The query port must be the same inside and outside the container
+      - 17777:17777/udp
+      - 27015:27015/udp
     expose:
-      - 9999/udp
+      - 17777/udp
+      - 27015/udp
     environment:
-      - "SERVER_NAME=ServerByMe"
-      - "SERVER_PORT=9999"
+      - "SERVER_NAME=IcarusServerByMe"
+      - "SERVER_PORT=17777"
+      - "SERVER_QUERY_PORT=27015"
+      - "SERVER_PASSWORD=password"
+      - "SERVER_ADMIN_PASSWORD=adminpassword"
+      - "MAX_PLAYERS=8"
+      - "SHUTDOWN_NOT_JOINED_FOR=-1"
+      - "SHUTDOWN_EMPTY_FOR=-1"
+      - "ALLOW_NON_ADMINS_LAUNCH=True"
+      - "ALLOW_NON_ADMINS_DELETE=False"
+      - "LOAD_PROSPECT="
+      - "CREATE_PROSPECT="
+      - "RESUME_PROSPECT=True"
+      - "STEAM_ASYNC_TIMEOUT=60"
+      - "GAME_BRANCH=public"
+      - "BACKUP_RETENTION=10"
       - "TZ=Etc/UTC"
     tmpfs:
       - "/run:exec,mode=777"
@@ -36,4 +56,4 @@ services:
       - "/var/tmp:exec,mode=777"
       - "/home/steam:exec,uid=10000,gid=10000,mode=700"
     restart: "unless-stopped"
-    stop_grace_period: 1m
+    stop_grace_period: 90s
