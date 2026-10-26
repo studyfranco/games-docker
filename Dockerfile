@@ -1,24 +1,17 @@
-FROM ghcr.io/studyfranco/games-docker:proton
+FROM ghcr.io/studyfranco/games-docker:proton-dotnet48
 
 LABEL maintainer="studyfranco@gmail.com"
 
-ARG CONTAINER_USER=steam
-ARG DEBIAN_FRONTEND=noninteractive
+# Game start script run by /init.sh, outside HOME (tmpfs) and owned by root
+COPY --chmod=755 run.sh /opt/game/run.sh
 
-USER root
+ENV STEAM_APP_ID="298740" \
+    WORLD_NAME="" \
+    GAMECONFIG="/config/gameconfigs/SpaceEngineers-Dedicated.cfg"
 
-# Tools of proton-build-prefix: the game images can add other winetricks verbs to the prefix
-RUN set -x \
-    && apt update \
-    && apt install -y winetricks cabextract xvfb xauth --no-install-recommends \
-    && apt clean \
-    && rm -rf /var/cache/* /var/lib/apt/lists/* /var/log/* /var/tmp/* /tmp/*
+EXPOSE 27016/udp 8080/tcp
 
-USER ${CONTAINER_USER}
-
-# Proton prefix with the core fonts, no sound and the .NET Framework 4.8 (Proton already has the Visual C++
-# runtime), copied to /config/compatdata at the first start by proton-prefix-init (to call in the run.sh of the game)
-RUN proton-build-prefix prefix
-RUN proton-build-prefix corefonts
-RUN proton-build-prefix sound=disabled
-RUN proton-build-prefix dotnet48
+# The server is up when its port (read in the config, the reference) is open
+# First start: download + copy of the Proton prefix
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15m --retries=3 \
+    CMD port=$(sed -n 's:.*<ServerPort>\([0-9]*\)</ServerPort>.*:\1:p' "${GAMECONFIG}") && awk '{print $2}' /proc/net/udp | grep -qi ":$(printf '%04X' "${port}")$" || exit 1

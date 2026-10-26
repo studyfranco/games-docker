@@ -1,8 +1,8 @@
 services:
-  games:
-    container_name: games-proton-dotnet48
-    hostname: games-proton-dotnet48
-    image: ghcr.io/studyfranco/games-docker:proton-dotnet48
+  space-engineers:
+    container_name: space-engineers-server
+    hostname: space-engineers-server
+    image: ghcr.io/studyfranco/games-docker:space-engineers
     #network_mode: "host"
     read_only: true
     init: true
@@ -21,13 +21,18 @@ services:
     volumes:
       # Must be owned by 10000:10000 (chown -R 10000:10000 /path/to/config)
       - "/path/to/config:/config"
+      # Optional, game files elsewhere (create the folder before, owned by 10000:10000)
+      #- "/path/to/gamefiles:/config/gamefiles"
     ports:
-      - 9999:9999/udp
+      - 27016:27016/udp
+      # Remote API, only if you need it from outside
+      #- 8080:8080/tcp
     expose:
-      - 9999/udp
+      - 27016/udp
+      - 8080/tcp
     environment:
-      - "SERVER_NAME=ServerByMe"
-      - "SERVER_PORT=9999"
+      - "WORLD_NAME="
+      - "BACKUP_RETENTION=10"
       - "TZ=Etc/UTC"
     tmpfs:
       - "/run:exec,mode=777"
