@@ -145,4 +145,4 @@ A backup of the saves and configs (`BACKUP_DIRS`) is made at each start in `/con
 ```
 
 ## Last Update
-2026-10-22
+2026-11-15
